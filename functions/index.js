@@ -122,7 +122,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
   function accountInterestEarned(app) {
     let account_balance = 0;
     let account = request.body.result.contexts.find(function(el){
-			return (el.name == 'interest-earned' && el.parameters.['account'])
+			return (el.name == 'interest-earned' && el.parameters['account'])
 		}).parameters.account;
 
     let months_str = equest.body.result.contexts.find(function(el){
