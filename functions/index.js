@@ -37,7 +37,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
   console.log('Request body: ' + JSON.stringify(request.body));
 
 	function balanceAmountCheck (app) {
-		app.ask('Your balance is ' + result.parameters.amount);
+		app.ask('Your balance is 1200.');
 		// app.addSimpleResponse('simple respond!');
 	}
 
