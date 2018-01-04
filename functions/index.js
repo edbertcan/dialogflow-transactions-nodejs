@@ -58,36 +58,36 @@ exports.transactions = functions.https.onRequest((request, response) => {
 				if (balance_savings < amount) {
 					balanceEnough = false;
 				} else {
-					balance_savings = balance_savings - amount;
+					balance_savings -= amount;
 				}
 				break;
 			case 'checking account':
 				if (balance_checking < amount) {
 					balanceEnough = false;
 				} else {
-					balance_checking = balance_checking - amount;
+					balance_checking -= amount;
 				}
 				break;
 			case 'credit card account':
 				if (balance_creditcard < amount) {
 					balanceEnough = false;
 				} else {
-					balance_creditcard = balance_creditcard - amount;
+					balance_creditcard -= amount;
 				}
 				break;
 		}
 		if (!balanceEnough) {
-			app.ask('You don\' have enough balance in your ' + accountFrom);
+			app.ask('Sorry, you don\'t have enough balance in your ' + accountFrom);
 		} else {
 			switch (accountTo) {
 				case 'savings account':
-					balance_savings = balance_savings + amount;
+					balance_savings += amount;
 					break;
 				case 'checking account':
-					balance_checking = balance_checking + amount;
+					balance_checking += amount;
 					break;
 				case 'credit card account':
-					balance_creditcard = balance_creditcard + amount;
+					balance_creditcard += amount;
 					break;
 			}
 			var date = Date.now().toString();
@@ -112,7 +112,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
 				amount = balance_creditcard;
 				break;
 		}
-		app.ask('Your balance is $' + amount);
+		app.ask('Your ' + account + ' balance is $' + amount);
 	}
 
   function transactionCheckNoPayment (app) {
