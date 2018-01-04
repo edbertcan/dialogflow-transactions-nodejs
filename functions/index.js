@@ -121,6 +121,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
 
   function accountInterestEarned(app) {
     let account_balance = 0;
+
     let account = request.body.result.contexts.find(function(el){
 			return (el.name == 'interest-earned' && el.parameters['account'])
 		}).parameters.account;
@@ -146,10 +147,10 @@ exports.transactions = functions.https.onRequest((request, response) => {
         break;
     }
     // Compund interest formula
-    let interest_earned = Math.pow(account_balance * (1 + COMPOUND_INTEREST_EARNING_PERCENTAGE / 12 ), (12 * months_int)) - account_balance;
+    var interest_earned = account_balance * Math.pow( (1 + COMPOUND_INTEREST_EARNING_PERCENTAGE / 12 ), (12 * months_int)) - account_balance;
+    console.log(account_balance + " , " + interest_earned);
 
-    app.ask( 'In ' + months_int + ' ' + months_unit + ' you have earned $' + interest_earned );
-
+    app.ask( 'In ' + months_int + ' ' + months_unit + ' you have earned $' +  Math.trunc(interest_earned * 100) / 100 );
   }
 
   function transactionCheckNoPayment (app) {
