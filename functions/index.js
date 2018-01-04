@@ -102,7 +102,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
 	function balanceAmountCheck (app) {
 		let amount = 0;
 		let account = request.body.result.contexts.find(function(el){
-			return (el.name == 'actions_capability_screen_output' && el.parameters.account)
+			return (el.name == 'balance' && el.parameters.account)
 		}).parameters.account;
 		switch (account) {
 			case 'savings account':
