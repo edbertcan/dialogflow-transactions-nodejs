@@ -27,6 +27,8 @@ const DELIVERY_ADDRESS_COMPLETE = 'delivery.address.complete';
 const TRANSACTION_DECISION_ACTION_PAYMENT = 'transaction.decision.action';
 const TRANSACTION_DECISION_COMPLETE = 'transaction.decision.complete';
 
+const BALANCE_AMOUNT_CHECK = 'balance.amount.check';
+
 const MILLISECONDS_TO_SECONDS_QUOTIENT = 1000;
 
 exports.transactions = functions.https.onRequest((request, response) => {
@@ -34,8 +36,13 @@ exports.transactions = functions.https.onRequest((request, response) => {
   console.log('Request headers: ' + JSON.stringify(request.headers));
   console.log('Request body: ' + JSON.stringify(request.body));
 
+	function balanceAmountCheck (app) {
+		app.ask('Your balance is ' + result.parameters.amount);
+		// app.addSimpleResponse('simple respond!');
+	}
+
   function transactionCheckNoPayment (app) {
-    app.askForTransactionRequirements();
+		app.askForTransactionRequirements();
   }
 
   function transactionCheckActionPayment (app) {
@@ -190,6 +197,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
   actionMap.set(DELIVERY_ADDRESS_COMPLETE, deliveryAddressComplete);
   actionMap.set(TRANSACTION_DECISION_ACTION_PAYMENT, transactionDecision);
   actionMap.set(TRANSACTION_DECISION_COMPLETE, transactionDecisionComplete);
+	actionMap.set(BALANCE_AMOUNT_CHECK, balanceAmountCheck);
 
   app.handleRequest(actionMap);
 });
