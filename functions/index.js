@@ -26,11 +26,13 @@ const DELIVERY_ADDRESS = 'delivery.address';
 const DELIVERY_ADDRESS_COMPLETE = 'delivery.address.complete';
 const TRANSACTION_DECISION_ACTION_PAYMENT = 'transaction.decision.action';
 const TRANSACTION_DECISION_COMPLETE = 'transaction.decision.complete';
-
 const BALANCE_AMOUNT_CHECK = 'account.balance.check';
 const TRANSFER_MONEY = 'transfer.money';
+const ACCOUNT_INTEREST_EARNED = 'account.interest.earned';
 
 const MILLISECONDS_TO_SECONDS_QUOTIENT = 1000;
+
+const COMPOUND_INTEREST_EARNING_PERCENTAGE = 0.03;
 
 var balance_savings = 20.21;
 var balance_checking = 101.22;
@@ -49,10 +51,12 @@ exports.transactions = functions.https.onRequest((request, response) => {
 		let accountTo = request.body.result.contexts.find(function (el) {
 			return (el.name == 'transfer' && el.parameters['account-to'])
 		}).parameters['account-to'];
+
 		let accountFrom = request.body.result.contexts.find(function (el) {
 			return (el.name == 'transfer' && el.parameters['account-from'][0])
 		}).parameters['account-from'][0];
 		var balanceEnough = true;
+
 		switch (accountFrom) {
 			case 'savings account':
 				if (balance_savings < amount) {
@@ -114,6 +118,37 @@ exports.transactions = functions.https.onRequest((request, response) => {
 		}
 		app.ask('Your balance is $' + amount);
 	}
+
+  function accountInterestEarned(app) {
+    let account_balance = 0;
+    let account = request.body.result.contexts.find(function(el){
+			return (el.name == 'interest-earned' && el.parameters.['account'])
+		}).parameters.account;
+
+    let months_str = equest.body.result.contexts.find(function(el){
+			return (el.name == 'interest-earned' && el.parameters.months)
+		}).parameters.months;
+
+    var months_int = months_str.replace( /^\D+/g, '');
+
+    switch (account) {
+      case 'savings account':
+        account_balance = balance_savings;
+        break;
+      case 'checking account':
+        account_balance = balance_checking;
+        break;
+      case 'credit card account':
+        app.ask("You do not earn interest on your Credit Card");
+        return;
+        break;
+    }
+    // Compund interest formula
+    let interest_earned = Math.pow(account_balance * (1 + COMPOUND_INTEREST_EARNING_PERCENTAGE / 12 ), (12 * months_int) - account_balance );
+
+    app.ask( 'In ' + months_str  + 'you have earned $' + interest_earned );
+
+  }
 
   function transactionCheckNoPayment (app) {
 		app.askForTransactionRequirements();
@@ -273,6 +308,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
   actionMap.set(TRANSACTION_DECISION_COMPLETE, transactionDecisionComplete);
 	actionMap.set(BALANCE_AMOUNT_CHECK, balanceAmountCheck);
 	actionMap.set(TRANSFER_MONEY, transferMoney);
+  actionMap.set(ACCOUNT_INTEREST_EARNED, accountInterestEarned);
 
   app.handleRequest(actionMap);
 });
