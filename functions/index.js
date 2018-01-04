@@ -32,7 +32,7 @@ const ACCOUNT_INTEREST_EARNED = 'account.interest.earned';
 
 const MILLISECONDS_TO_SECONDS_QUOTIENT = 1000;
 
-const COMPOUND_INTEREST_EARNING_PERCENTAGE = 0.03;
+const COMPOUND_INTEREST_EARNING_PERCENTAGE = 0.05;
 
 var balance_savings = 20.21;
 var balance_checking = 101.22;
@@ -125,11 +125,13 @@ exports.transactions = functions.https.onRequest((request, response) => {
 			return (el.name == 'interest-earned' && el.parameters['account'])
 		}).parameters.account;
 
-    let months_str = equest.body.result.contexts.find(function(el){
-			return (el.name == 'interest-earned' && el.parameters.months)
-		}).parameters.months;
+    let months_int = request.body.result.contexts.find(function(el){
+			return (el.name == 'interest-earned' && el.parameters.months )
+		}).parameters.months.amount;
 
-    var months_int = months_str.replace( /^\D+/g, '');
+    let months_unit = request.body.result.contexts.find(function(el){
+			return (el.name == 'interest-earned' && el.parameters.months )
+		}).parameters.months.unit;
 
     switch (account) {
       case 'savings account':
@@ -144,9 +146,9 @@ exports.transactions = functions.https.onRequest((request, response) => {
         break;
     }
     // Compund interest formula
-    let interest_earned = Math.pow(account_balance * (1 + COMPOUND_INTEREST_EARNING_PERCENTAGE / 12 ), (12 * months_int) - account_balance );
+    let interest_earned = Math.pow(account_balance * (1 + COMPOUND_INTEREST_EARNING_PERCENTAGE / 12 ), (12 * months_int)) - account_balance;
 
-    app.ask( 'In ' + months_str  + 'you have earned $' + interest_earned );
+    app.ask( 'In ' + months_int + ' ' + months_unit + ' you have earned $' + interest_earned );
 
   }
 
@@ -307,8 +309,8 @@ exports.transactions = functions.https.onRequest((request, response) => {
   actionMap.set(TRANSACTION_DECISION_ACTION_PAYMENT, transactionDecision);
   actionMap.set(TRANSACTION_DECISION_COMPLETE, transactionDecisionComplete);
 	actionMap.set(BALANCE_AMOUNT_CHECK, balanceAmountCheck);
-	actionMap.set(TRANSFER_MONEY, transferMoney);
-  actionMap.set(ACCOUNT_INTEREST_EARNED, accountInterestEarned);
+	actionMap.set(ACCOUNT_INTEREST_EARNED, accountInterestEarned);
+  actionMap.set(TRANSFER_MONEY, transferMoney);
 
   app.handleRequest(actionMap);
 });
