@@ -27,18 +27,92 @@ const DELIVERY_ADDRESS_COMPLETE = 'delivery.address.complete';
 const TRANSACTION_DECISION_ACTION_PAYMENT = 'transaction.decision.action';
 const TRANSACTION_DECISION_COMPLETE = 'transaction.decision.complete';
 
-const BALANCE_AMOUNT_CHECK = 'balance.amount.check';
+const BALANCE_AMOUNT_CHECK = 'account.balance.check';
+const TRANSFER_MONEY = 'transfer.money';
 
 const MILLISECONDS_TO_SECONDS_QUOTIENT = 1000;
+
+var balance_savings = 20.21;
+var balance_checking = 101.22;
+var balance_creditcard = 33.42;
 
 exports.transactions = functions.https.onRequest((request, response) => {
   const app = new DialogflowApp({ request, response });
   console.log('Request headers: ' + JSON.stringify(request.headers));
   console.log('Request body: ' + JSON.stringify(request.body));
 
+	function transferMoney (app) {
+		console.log(request.body.result.contexts[0].parameters);
+		let amount = request.body.result.contexts.find(function (el) {
+			return (el.name == 'transfer' && el.parameters.amount)
+		}).parameters.amount.amount;
+		let accountTo = request.body.result.contexts.find(function (el) {
+			return (el.name == 'transfer' && el.parameters['account-to'])
+		}).parameters['account-to'];
+		let accountFrom = request.body.result.contexts.find(function (el) {
+			return (el.name == 'transfer' && el.parameters['account-from'][0])
+		}).parameters['account-from'][0];
+		var balanceEnough = true;
+		switch (accountFrom) {
+			case 'savings account':
+				if (balance_savings < amount) {
+					balanceEnough = false;
+				} else {
+					balance_savings = balance_savings - amount;
+				}
+				break;
+			case 'checking account':
+				if (balance_checking < amount) {
+					balanceEnough = false;
+				} else {
+					balance_checking = balance_checking - amount;
+				}
+				break;
+			case 'credit card account':
+				if (balance_creditcard < amount) {
+					balanceEnough = false;
+				} else {
+					balance_creditcard = balance_creditcard - amount;
+				}
+				break;
+		}
+		if (!balanceEnough) {
+			app.ask('You don\' have enough balance in your ' + accountFrom);
+		} else {
+			switch (accountTo) {
+				case 'savings account':
+					balance_savings = balance_savings + amount;
+					break;
+				case 'checking account':
+					balance_checking = balance_checking + amount;
+					break;
+				case 'credit card account':
+					balance_creditcard = balance_creditcard + amount;
+					break;
+			}
+			var date = Date.now().toString();
+			app.ask('Okay, I have processed your transfer. Your confirmation number is: B' + date.substr(date.length - 9));
+		}
+	}
+
 	function balanceAmountCheck (app) {
-		app.ask('Your balance is 1200.');
-		// app.addSimpleResponse('simple respond!');
+		let amount = 0;
+		let account = request.body.result.contexts.find(function(el){
+			return (el.name == 'actions_capability_screen_output' && el.parameters.account)
+		}).parameters.account;
+		switch (account) {
+			case 'savings account':
+				amount = balance_savings;
+				break;
+			case 'chequing account':
+			case 'checking account':
+				amount = balance_checking;
+				break;
+			case 'credit card account':
+				amount = balance_creditcard;
+				break;
+		}
+		app.ask('Your balance is $' + amount);
 	}
 
   function transactionCheckNoPayment (app) {
@@ -198,6 +272,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
   actionMap.set(TRANSACTION_DECISION_ACTION_PAYMENT, transactionDecision);
   actionMap.set(TRANSACTION_DECISION_COMPLETE, transactionDecisionComplete);
 	actionMap.set(BALANCE_AMOUNT_CHECK, balanceAmountCheck);
+	actionMap.set(TRANSFER_MONEY, transferMoney);
 
   app.handleRequest(actionMap);
 });
