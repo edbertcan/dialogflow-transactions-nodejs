@@ -94,7 +94,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
 					balance_checking += amount;
 					break;
 				case 'credit card account':
-					balance_creditcard += amount;
+					balance_creditcard -= amount;
 					break;
 			}
 			var date = Date.now().toString();
@@ -219,7 +219,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
 
     app.ask(
       "You have transferred $" +  paid_to_amount + " to " + paid_to_merchant + " using your " + paid_from_account+ "." + "\n" +
-      "Your current " + paid_from_account + " balance is $" + account_balance + "."
+			"Your current " + paid_from_account + " balance is $" + (Math.trunc(account_balance * 100) / 100) + "."
     );
   }
 
