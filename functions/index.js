@@ -29,8 +29,11 @@ const TRANSACTION_DECISION_COMPLETE = 'transaction.decision.complete';
 const BALANCE_AMOUNT_CHECK = 'account.balance.check';
 const TRANSFER_MONEY = 'transfer.money';
 const ACCOUNT_INTEREST_EARNED = 'account.interest.earned';
+const STOCK_BUY = "stock.buy";
+const MERCHANT_PAY = "merchant.pay";
 
 const MILLISECONDS_TO_SECONDS_QUOTIENT = 1000;
+const DEFAULT_STOCK_PRICE = 18.88;
 
 const COMPOUND_INTEREST_EARNING_PERCENTAGE = 0.05;
 
@@ -150,7 +153,56 @@ exports.transactions = functions.https.onRequest((request, response) => {
     var interest_earned = account_balance * Math.pow( (1 + COMPOUND_INTEREST_EARNING_PERCENTAGE / 12 ), (12 * months_int)) - account_balance;
     console.log(account_balance + " , " + interest_earned);
 
-    app.ask( 'In ' + months_int + ' ' + months_unit + ' you have earned $' +  Math.trunc(interest_earned * 100) / 100 );
+    app.ask( 'In ' + months_int + ' ' + (months_unit === 'mo' ? 'months' : months_unit) + ' you have earned $' +  Math.trunc(interest_earned * 100) / 100 );
+  }
+
+  function stockBuy(app){
+    let stock_bought_name = request.body.result.contexts.find(function(el){
+			return (el.name == 'stockbuy-followup' && el.parameters.stock_name )
+		}).parameters.stock_name;
+
+    let stock_bought_number = request.body.result.contexts.find(function(el){
+			return (el.name == 'stockbuy-followup' && el.parameters.number )
+		}).parameters.number;
+
+    var total = stock_bought_number * DEFAULT_STOCK_PRICE;
+
+    app.ask( "The price for " +  stock_bought_number + " units of " + stock_bought_name + " stocks is $" + Math.trunc(total * 100) / 100  + " , would you like to continue?" );
+  }
+
+  function merchantPay(app) {
+    let paid_to_merchant = request.body.result.contexts.find(function(el){
+			return (el.name == 'paid-to' && el.parameters.merchant )
+		}).parameters.merchant;
+
+    let paid_to_amount = request.body.result.contexts.find(function(el){
+			return (el.name == 'paid-to' && el.parameters.amount )
+		}).parameters.amount;
+
+    let paid_from_account = request.body.result.contexts.find(function(el){
+			return (el.name == 'paid-to' && el.parameters.account )
+		}).parameters.account;
+
+    var account_balance = 0;
+    switch (account) {
+      case 'savings account':
+        balance_savings = balance_savings - paid_to_amount;
+        account_balance = balance_savings;
+        break;
+      case 'checking account':
+        balance_checking = balance_checking - paid_to_amount;
+        account_balance = balance_checking;
+        break;
+      case 'credit card account':
+        balance_creditcard = balance_creditcard + paid_to_amount;
+        account_balance = balance_creditcard;
+        break;
+    }
+
+    app.ask( "You have transferred $" +  paid_to_amount + " to " + paid_to_merchant + " using your " + paid_from_account);
+    app.ask( "Your current " + paid_from_account + " balance is $" + account_balance);
+
+
   }
 
   function transactionCheckNoPayment (app) {
@@ -311,6 +363,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
   actionMap.set(TRANSACTION_DECISION_COMPLETE, transactionDecisionComplete);
 	actionMap.set(BALANCE_AMOUNT_CHECK, balanceAmountCheck);
 	actionMap.set(ACCOUNT_INTEREST_EARNED, accountInterestEarned);
+  actionMap.set(STOCK_BUY ,stockBuy);
   actionMap.set(TRANSFER_MONEY, transferMoney);
 
   app.handleRequest(actionMap);
