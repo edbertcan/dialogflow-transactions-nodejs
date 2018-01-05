@@ -176,15 +176,33 @@ exports.transactions = functions.https.onRequest((request, response) => {
 		}).parameters.merchant;
 
     let paid_to_amount = request.body.result.contexts.find(function(el){
-			return (el.name == 'paid-to' && el.parameters.amount )
-		}).parameters.amount;
+			return (el.name == 'paid-to' && el.parameters.paid.amount )
+		}).parameters.paid.amount;
 
     let paid_from_account = request.body.result.contexts.find(function(el){
 			return (el.name == 'paid-to' && el.parameters.account )
 		}).parameters.account;
 
     var account_balance = 0;
-    switch (account) {
+
+    switch (paid_from_account) {
+      case 'savings account':
+        account_balance = balance_savings;
+        break;
+      case 'checking account':
+        account_balance = balance_checking;
+        break;
+      case 'credit card account':
+        account_balance = balance_creditcard;
+        break;
+    }
+
+    if ( ((account_balance - paid_to_amount) < 0 ) && paid_from_account !== 'credit card account') {
+			app.ask('Sorry, you don\'t have enough balance in your ' + paid_from_account);
+      return;
+		}
+
+    switch (paid_from_account) {
       case 'savings account':
         balance_savings = balance_savings - paid_to_amount;
         account_balance = balance_savings;
@@ -199,10 +217,10 @@ exports.transactions = functions.https.onRequest((request, response) => {
         break;
     }
 
-    app.ask( "You have transferred $" +  paid_to_amount + " to " + paid_to_merchant + " using your " + paid_from_account);
-    app.ask( "Your current " + paid_from_account + " balance is $" + account_balance);
-
-
+    app.ask(
+      "You have transferred $" +  paid_to_amount + " to " + paid_to_merchant + " using your " + paid_from_account+ "." + "\n" +
+      "Your current " + paid_from_account + " balance is $" + account_balance + "."
+    );
   }
 
   function transactionCheckNoPayment (app) {
@@ -364,6 +382,7 @@ exports.transactions = functions.https.onRequest((request, response) => {
 	actionMap.set(BALANCE_AMOUNT_CHECK, balanceAmountCheck);
 	actionMap.set(ACCOUNT_INTEREST_EARNED, accountInterestEarned);
   actionMap.set(STOCK_BUY ,stockBuy);
+  actionMap.set(MERCHANT_PAY ,merchantPay);
   actionMap.set(TRANSFER_MONEY, transferMoney);
 
   app.handleRequest(actionMap);
